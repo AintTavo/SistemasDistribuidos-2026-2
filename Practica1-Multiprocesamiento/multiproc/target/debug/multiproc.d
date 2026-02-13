@@ -1,1 +1,1 @@
-C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica1-Multiprocesamiento\multiproc\target\debug\multiproc.exe: C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica1-Multiprocesamiento\multiproc\src\main.rs
+/Users/ainttavo/ESCOM/2026-2/Sistemas\ distribuidos/SistemasDistribuidos-2026-2/Practica1-Multiprocesamiento/multiproc/target/debug/multiproc: /Users/ainttavo/ESCOM/2026-2/Sistemas\ distribuidos/SistemasDistribuidos-2026-2/Practica1-Multiprocesamiento/multiproc/src/main.rs

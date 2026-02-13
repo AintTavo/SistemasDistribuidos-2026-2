@@ -24,21 +24,24 @@ fn main() {
 
         loop{
             // Checa si la vida llego a 0
-            match rx_m.try_recv() {
-                Ok((0, 0)) =>{
+            while let Ok((x,y)) = rx_m.try_recv(){
+                if ( x == 0 ) && ( y == 0 ) {
                     println!("Monstruo: Y asi cayo el dichoso heroe");
                     return;
-                },
-                Ok((_, hero_attack)) => {
-                    if (life - hero_attack) <= 0 {
+                }
+
+                match y {
+                    0 => println!("El ataque no tuvo efecto"),
+                    _ => {
+                        if (life - y) <= 0 {
                         life = 0;
-                    }
-                    else{
-                        life = life - hero_attack;
-                    } 
-                },
-                Err(_) => {},
-            };
+                        }
+                        else{
+                            life = life - y;
+                        } 
+                    },
+                }
+            }
 
             if life <= 0 {
                 println!("El monstruo fue derrotado en el campo de batalla");
@@ -55,8 +58,6 @@ fn main() {
             }
 
             let action_factor = d20_action_validation(dice.gen_range(1..=20 as i32));
-
-            print!("Monstruo [{}/{}] :",life, max_life);
             // La accion que realizara este turno el jefe
             match action {
                 1 => { // Healing
@@ -64,22 +65,22 @@ fn main() {
                     life = life + healing;
                     if (life + healing) >= max_life {
                         life = max_life;
-                        println!("El monstruo ya curó todas sus heridas");
+                        println!("Monstruo [{}/{}] : El monstruo ya curó todas sus heridas", life, max_life);
                     }
                     else{
                         life = life + healing;
-                        println!("El monstruo se curo {}, pasa a tener {} de vida", healing, life);
+                        println!("Monstruo [{}/{}] : El monstruo se curo {}, pasa a tener {} de vida", life, max_life, healing, life);
                     }
                     
                 },
                 2 => { // Attack
                     let attack : i32 = (((dice.gen_range(1..=6) as f32) + (dice.gen_range(1..=6) as f32)) * action_factor) as i32;
-                    println!("El monstruo ataco al heroe con {}", attack);
+                    println!("Monstruo [{}/{}] : El monstruo ataco al heroe con {}", life, max_life, attack);
                     let _ = tx_h.send((life, attack)).unwrap();
 
                 },
-                3 => println!("El monstruo decidio descansar este turno"),
-                _ => println!("Error generating an action!!"),
+                3 => println!("Monstruo [{}/{}] : El monstruo decidio descansar este turno", life, max_life,),
+                _ => println!("Monstruo [{}/{}] : Error generating an action!!", life, max_life,),
             }
 
             thread::sleep(Duration::from_secs(3));
@@ -97,21 +98,24 @@ fn main() {
         let mut potions = 3;
 
         loop{
-            match rx_h.try_recv() {
-                Ok((0, 0)) =>{
-                    println!("Heroe: La victoria es mia bestia");
+            while let Ok((x,y)) = rx_h.try_recv(){
+                if ( x == 0 ) && ( y == 0 ) {
+                    println!("Heroe: Caiste bestia");
                     return;
-                },
-                Ok((_, hero_attack)) => {
-                    if (life - hero_attack) <= 0 {
+                }
+
+                match y {
+                    0 => println!("El ataque no tuvo efecto"),
+                    _ => {
+                        if (life - y) <= 0 {
                         life = 0;
-                    }
-                    else{
-                        life = life - hero_attack;
-                    } 
-                },
-                Err(_) => {},
-            };
+                        }
+                        else{
+                            life = life - y;
+                        } 
+                    },
+                }
+            }
 
             if life <= 0 {
                 println!("El heroe fallecio en el campo de batalla");
@@ -127,12 +131,11 @@ fn main() {
                 action = 2;
             }
 
-            print!("Heroe [{}/{}] :",life, max_life);
             match action {
                 1 => {
-                    println!("El heroe esta tratando de currarse");
+                    println!("Heroe [{}/{}] : El heroe esta tratando de currarse", life, max_life);
                     if life >= (max_life/2) {
-                        println!("El heroe aun tiene suficiente vida");
+                        println!("Heroe [{}/{}] : El heroe aun tiene suficiente vida", life, max_life);
                         
                     }
                     else{
@@ -144,10 +147,10 @@ fn main() {
                             else{
                                 life = life + 50;
                             }
-                            println!("El heroe tomo una pocion, le quedan {}", potions);
+                            println!("Heroe [{}/{}] : El heroe tomo una pocion, le quedan {}", life, max_life, potions);
                         }
                         else {
-                            println!("El heroe trato de curarse, pero ya no tiene pociones");
+                            println!("Heroe [{}/{}] : El heroe trato de curarse, pero ya no tiene pociones",life, max_life);
                         }   
                         
                     }
@@ -157,13 +160,13 @@ fn main() {
                     let _d8_1 = dice.gen_range(1..=8);
                     let _d8_2 = dice.gen_range(1..=8);
                     let attack = (((_d8_1 + _d8_2) as f32) * d20_action_validation(_d20)) as i32;
-                    println!("El heroe esta atacando con {}", attack);
+                    println!("Heroe [{}/{}] : El heroe esta atacando con {}", life, max_life, attack);
                     let _ = tx_m.send((life, attack));
                 },
-                3 => println!("El heroe esta tomando un descanso"),
-                _ => println!("Error generando accion de acción"),
+                3 => println!("Heroe [{}/{}] : El heroe esta tomando un descanso", life, max_life,),
+                _ => println!("Heroe [{}/{}] : Error generando accion de acción", life, max_life,),
             };
-            thread::sleep(Duration::from_secs(3));
+            thread::sleep(Duration::from_secs(1));
         };
     });
 
