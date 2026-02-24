@@ -1,0 +1,1 @@
+C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica2-ClienteServidor\servidor\target\release\servidor.exe: C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica2-ClienteServidor\servidor\src\main.rs
