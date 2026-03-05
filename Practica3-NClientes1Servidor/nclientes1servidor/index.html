@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⚔️ Dungeon Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+  /* ══════════════════════════════════════════════
+     ROOT & RESET
+  ══════════════════════════════════════════════ */
+  :root {
+    --stone:      #1a1510;
+    --stone-2:    #231d16;
+    --stone-3:    #2e2518;
+    --stone-4:    #3d321f;
+    --gold:       #c9a84c;
+    --gold-light: #e8c96a;
+    --blood:      #8b1a1a;
+    --blood-light:#c0392b;
+    --jade:       #1a6b4a;
+    --jade-light: #27ae60;
+    --bone:       #d4c5a9;
+    --bone-dim:   #8a7a60;
+    --ember:      #e67e22;
+    --glow-gold:  0 0 20px rgba(201,168,76,0.4);
+    --glow-blood: 0 0 20px rgba(192,57,43,0.5);
+    --glow-jade:  0 0 20px rgba(39,174,96,0.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--stone);
+    color: var(--bone);
+    font-family: 'Crimson Text', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    overflow-x: hidden;
+
+    /* Stone texture via repeating gradient */
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(60,40,10,.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(40,20,5,.12) 0%, transparent 50%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,.012) 2px,
+        rgba(255,255,255,.012) 4px
+      );
+  }
+
+  /* ══════════════════════════════════════════════
+     HEADER
+  ══════════════════════════════════════════════ */
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .title-rune {
+    font-size: 11px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    font-family: 'Cinzel', serif;
+    margin-bottom: 4px;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: clamp(28px, 6vw, 52px);
+    color: var(--gold);
+    text-shadow: var(--glow-gold), 0 2px 4px rgba(0,0,0,.8);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: 15px;
+    color: var(--bone-dim);
+    margin-top: 6px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px auto 0;
+    max-width: 400px;
+    color: var(--gold);
+    opacity: .5;
+    font-size: 18px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* ══════════════════════════════════════════════
+     CONNECTION STATUS
+  ══════════════════════════════════════════════ */
+  #status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--stone-4);
+    background: var(--stone-2);
+    margin-bottom: 28px;
+  }
+  #status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--bone-dim);
+    transition: background .3s, box-shadow .3s;
+  }
+  #status.connected    #status-dot { background: var(--jade-light); box-shadow: 0 0 8px var(--jade-light); }
+  #status.connecting   #status-dot { background: var(--gold); box-shadow: 0 0 8px var(--gold); animation: pulse 1s infinite; }
+  #status.disconnected #status-dot { background: var(--blood-light); box-shadow: 0 0 8px var(--blood-light); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ══════════════════════════════════════════════
+     MAIN LAYOUT
+  ══════════════════════════════════════════════ */
+  .arena {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 24px;
+    width: 100%;
+    max-width: 960px;
+    align-items: start;
+  }
+
+  /* ══════════════════════════════════════════════
+     BOARD
+  ══════════════════════════════════════════════ */
+  .board-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .board-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: .7;
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: var(--stone-2);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--stone-4);
+    box-shadow: 0 0 60px rgba(0,0,0,.6), inset 0 0 30px rgba(0,0,0,.4);
+    position: relative;
+  }
+
+  /* Corner runes */
+  #board::before, #board::after {
+    content: '✦';
+    position: absolute;
+    color: var(--gold);
+    opacity: .25;
+    font-size: 10px;
+  }
+  #board::before { top: 4px; left: 6px; }
+  #board::after  { bottom: 4px; right: 6px; }
+
+  .cell {
+    width: 130px;
+    height: 130px;
+    background: var(--stone-3);
+    border-radius: 6px;
+    border: 1px solid var(--stone-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    transition: background .3s, box-shadow .3s, transform .2s;
+    overflow: hidden;
+  }
+
+  /* Subtle stone pattern inside cell */
+  .cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255,255,255,.015) 10px,
+      rgba(255,255,255,.015) 11px
+    );
+    pointer-events: none;
+  }
+
+  .cell.empty .cell-icon { opacity: .15; }
+
+  .cell.occupied {
+    border-color: var(--gold);
+    box-shadow: inset 0 0 20px rgba(201,168,76,.08), var(--glow-gold);
+  }
+
+  .cell.just-attacked {
+    animation: attackFlash .5s ease;
+  }
+  .cell.just-moved {
+    animation: moveGlow .5s ease;
+  }
+  .cell.just-potion {
+    animation: potionGlow .5s ease;
+  }
+
+  @keyframes attackFlash { 0%{box-shadow:inset 0 0 40px rgba(192,57,43,.8)} 100%{} }
+  @keyframes moveGlow    { 0%{box-shadow:inset 0 0 40px rgba(39,174,96,.6)} 100%{} }
+  @keyframes potionGlow  { 0%{box-shadow:inset 0 0 40px rgba(52,152,219,.7)} 100%{} }
+
+  .cell-coords {
+    position: absolute;
+    top: 4px; right: 6px;
+    font-size: 10px;
+    color: var(--bone-dim);
+    opacity: .4;
+    font-family: 'Cinzel', serif;
+  }
+
+  .cell-hero-id {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--gold-light);
+    text-shadow: var(--glow-gold);
+  }
+
+  .cell-icon {
+    font-size: 34px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.8));
+  }
+
+  .cell-hp-bar {
+    width: 80%;
+    height: 5px;
+    background: var(--stone-4);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .cell-hp-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease, background .4s;
+  }
+
+  .cell-action-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* ══════════════════════════════════════════════
+     PANELS (left / right)
+  ══════════════════════════════════════════════ */
+  .panel {
+    background: var(--stone-2);
+    border: 1px solid var(--stone-4);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .panel-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: .8;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--stone-4);
+  }
+
+  /* ── Hero card ─────────────────────────────── */
+  .hero-card {
+    background: var(--stone-3);
+    border: 1px solid var(--stone-4);
+    border-radius: 6px;
+    padding: 10px 12px;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .hero-card.alive { border-color: rgba(201,168,76,.3); }
+  .hero-card.dead  { opacity: .4; filter: grayscale(.8); }
+
+  .hero-card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .hero-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .hero-name {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold-light);
+    flex: 1;
+  }
+  .hero-pos {
+    font-size: 11px;
+    color: var(--bone-dim);
+    font-family: monospace;
+  }
+
+  .hp-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--stone-4);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .hp-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .4s, background .4s;
+  }
+  .hp-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--bone-dim);
+  }
+  .potion-row {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--bone-dim);
+  }
+  .hero-action {
+    margin-top: 5px;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--bone-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Event log ─────────────────────────────── */
+  #event-log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--stone-4) transparent;
+  }
+
+  .log-entry {
+    font-size: 12px;
+    color: var(--bone-dim);
+    padding: 4px 6px;
+    border-left: 2px solid var(--stone-4);
+    border-radius: 2px;
+    background: var(--stone-3);
+    animation: fadeIn .3s ease;
+  }
+  .log-entry.attack { border-color: var(--blood-light); color: #e88; }
+  .log-entry.move   { border-color: var(--jade-light);  color: #8c8; }
+  .log-entry.potion { border-color: #5dade2;             color: #8cf; }
+  .log-entry.death  { border-color: var(--bone-dim); color: var(--bone); font-weight: 600; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+  /* ── Stats ─────────────────────────────────── */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  .stat-label { color: var(--bone-dim); font-style: italic; }
+  .stat-val   { color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 12px; }
+
+  /* ── Tick counter ──────────────────────────── */
+  #tick-counter {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--bone-dim);
+    text-align: center;
+    margin-top: 8px;
+    opacity: .6;
+  }
+
+  /* ══════════════════════════════════════════════
+     DEMO / SIMULACIÓN LOCAL
+  ══════════════════════════════════════════════ */
+  .demo-notice {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--gold);
+    opacity: .7;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  /* ══════════════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════════════ */
+  @media (max-width: 780px) {
+    .arena { grid-template-columns: 1fr; }
+    .cell  { width: 100px; height: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="title-rune">⚔ &nbsp; Multiplayer Dungeon &nbsp; ⚔</p>
+  <h1>DUNGEON ARENA</h1>
+  <p class="subtitle">Tablero de batalla — arquitectura cliente/servidor en Rust</p>
+  <div class="divider">✦</div>
+</header>
+
+<div id="status" class="connecting">
+  <div id="status-dot"></div>
+  <span id="status-text">CONECTANDO AL SERVIDOR…</span>
+</div>
+
+<p class="demo-notice" id="demo-notice">
+  🛡 Modo demostración activo — conecta el WS bridge (ws://localhost:9001) para datos reales
+</p>
+
+<div class="arena">
+
+  <!-- LEFT PANEL: héroes vivos -->
+  <div class="panel">
+    <div class="panel-title">⚔ Héroes Activos</div>
+    <div id="heroes-list">
+      <p style="font-size:12px;color:var(--bone-dim);font-style:italic">Sin héroes aún...</p>
+    </div>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board-wrap">
+    <div class="board-label">— Tablero 3 × 3 —</div>
+    <div id="board"></div>
+    <div id="tick-counter">TICK #0</div>
+  </div>
+
+  <!-- RIGHT PANEL: log de eventos -->
+  <div class="panel">
+    <div class="panel-title">📜 Registro de Batalla</div>
+    <div id="event-log">
+      <p style="font-size:12px;color:var(--bone-dim);font-style:italic">Esperando eventos...</p>
+    </div>
+    <div class="panel-title" style="margin-top:8px">📊 Estadísticas</div>
+    <div id="stats-panel">
+      <div class="stat-row"><span class="stat-label">Clientes conectados</span><span class="stat-val" id="s-clients">0</span></div>
+      <div class="stat-row"><span class="stat-label">Ataques totales</span>   <span class="stat-val" id="s-attacks">0</span></div>
+      <div class="stat-row"><span class="stat-label">Pociones usadas</span>   <span class="stat-val" id="s-potions">0</span></div>
+      <div class="stat-row"><span class="stat-label">Muertes totales</span>   <span class="stat-val" id="s-deaths">0</span></div>
+      <div class="stat-row"><span class="stat-label">Movimientos</span>       <span class="stat-val" id="s-moves">0</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONSTANTES & UTILIDADES
+// ══════════════════════════════════════════════════════════
+const BOARD_SIZE = 3;
+const WS_URL     = 'ws://127.0.0.1:9001';
+const ICONS      = ['🧙','⚔️','🛡️','🗡️','🪄','🏹','⚒️','🔮'];
+const COLORS     = ['#e63946','#2a9d8f','#e9c46a','#8338ec','#fb8500','#3498db','#e74c3c','#1abc9c'];
+
+// Estadísticas locales
+let stats = { attacks: 0, potions: 0, deaths: 0, moves: 0 };
+
+// Último estado conocido por cliente (para detectar cambios)
+let lastState = {};
+
+// ── HP color ──────────────────────────────────────────────
+function hpColor(ratio) {
+  if (ratio > 0.6) return '#27ae60';
+  if (ratio > 0.3) return '#f39c12';
+  return '#c0392b';
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER TABLERO
+// ══════════════════════════════════════════════════════════
+function renderBoard(board) {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const hero = board[r][c];
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + (hero ? 'occupied' : 'empty');
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+
+      // Coordenadas
+      const coords = document.createElement('span');
+      coords.className = 'cell-coords';
+      coords.textContent = `${r},${c}`;
+      cell.appendChild(coords);
+
+      if (hero) {
+        const icon = document.createElement('div');
+        icon.className = 'cell-icon';
+        icon.textContent = ICONS[hero.id % ICONS.length];
+        cell.appendChild(icon);
+
+        const idLabel = document.createElement('div');
+        idLabel.className = 'cell-hero-id';
+        idLabel.textContent = `Héroe ${hero.id + 1}`;
+        cell.appendChild(idLabel);
+
+        const hpBar = document.createElement('div');
+        hpBar.className = 'cell-hp-bar';
+        const ratio = Math.max(0, hero.life / hero.max_life);
+        const hpFill = document.createElement('div');
+        hpFill.className = 'cell-hp-fill';
+        hpFill.style.width   = `${ratio * 100}%`;
+        hpFill.style.background = hpColor(ratio);
+        hpBar.appendChild(hpFill);
+        cell.appendChild(hpBar);
+
+        // Badge de acción
+        if (hero.action && hero.action !== 'idle') {
+          const badge = document.createElement('div');
+          badge.className = 'cell-action-badge';
+          const cfg = {
+            attack: { bg:'rgba(139,26,26,.8)', color:'#ffaaaa', text:'⚔ ATACA'   },
+            move:   { bg:'rgba(26,107,74,.8)', color:'#aaffcc', text:'🚶 MUEVE'  },
+            potion: { bg:'rgba(20,80,140,.8)', color:'#aaddff', text:'🧪 POCIÓN' },
+          }[hero.action] || { bg:'rgba(0,0,0,.5)', color:'#ccc', text:hero.action };
+          badge.style.background = cfg.bg;
+          badge.style.color      = cfg.color;
+          badge.textContent      = cfg.text;
+          cell.appendChild(badge);
+
+          // Flash animation
+          if (hero.action === 'attack') cell.classList.add('just-attacked');
+          if (hero.action === 'move')   cell.classList.add('just-moved');
+          if (hero.action === 'potion') cell.classList.add('just-potion');
+        }
+
+        // Highlight borde con color del héroe
+        const hcolor = COLORS[hero.id % COLORS.length];
+        cell.style.borderColor = hcolor + '88';
+        cell.style.boxShadow   = `inset 0 0 20px ${hcolor}18, 0 0 12px ${hcolor}22`;
+
+      } else {
+        const icon = document.createElement('div');
+        icon.className = 'cell-icon';
+        icon.textContent = '·';
+        icon.style.fontSize = '24px';
+        cell.appendChild(icon);
+      }
+
+      el.appendChild(cell);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER PANEL HÉROES
+// ══════════════════════════════════════════════════════════
+function renderHeroes(board) {
+  const heroes = [];
+  for (let r = 0; r < BOARD_SIZE; r++)
+    for (let c = 0; c < BOARD_SIZE; c++)
+      if (board[r][c]) heroes.push({ ...board[r][c], row: r, col: c });
+
+  const el = document.getElementById('heroes-list');
+  el.innerHTML = '';
+  document.getElementById('s-clients').textContent = heroes.length;
+
+  if (!heroes.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--bone-dim);font-style:italic">Sin héroes activos...</p>';
+    return;
+  }
+
+  heroes.forEach(hero => {
+    const ratio  = Math.max(0, hero.life / hero.max_life);
+    const hcolor = COLORS[hero.id % COLORS.length];
+    const card   = document.createElement('div');
+    card.className = 'hero-card alive';
+
+    card.innerHTML = `
+      <div class="hero-card-top">
+        <div class="hero-dot" style="background:${hcolor};box-shadow:0 0 6px ${hcolor}"></div>
+        <span class="hero-name">Héroe ${hero.id + 1}</span>
+        <span class="hero-pos">(${hero.row},${hero.col})</span>
+      </div>
+      <div class="hp-bar">
+        <div class="hp-fill" style="width:${ratio*100}%;background:${hpColor(ratio)}"></div>
+      </div>
+      <div class="hp-text">
+        <span>${hero.life}/${hero.max_life} HP</span>
+        <span>${Math.round(ratio*100)}%</span>
+      </div>
+      <div class="potion-row">🧪 Pociones: ${hero.potions}</div>
+      <div class="hero-action">${actionLabel(hero.action)}</div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function actionLabel(a) {
+  return { attack:'⚔️ Atacando', move:'🚶 Moviéndose', potion:'🧪 Usando poción', idle:'💤 Esperando' }[a] || a || '—';
+}
+
+// ══════════════════════════════════════════════════════════
+//  EVENT LOG
+// ══════════════════════════════════════════════════════════
+function addLog(text, type = '') {
+  const log = document.getElementById('event-log');
+  // Limpiar placeholder
+  if (log.querySelector('p')) log.innerHTML = '';
+
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.textContent = text;
+  log.prepend(entry);
+
+  // Limitar a 50 entradas
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+// ══════════════════════════════════════════════════════════
+//  DETECCIÓN DE EVENTOS (comparando estados)
+// ══════════════════════════════════════════════════════════
+function detectEvents(board) {
+  board.forEach((row, r) => {
+    row.forEach((hero, c) => {
+      if (!hero) return;
+      const key  = hero.id;
+      const prev = lastState[key];
+
+      if (!prev) {
+        addLog(`⚡ Héroe ${hero.id + 1} entró al tablero en (${r},${c})`, 'move');
+      } else {
+        if (hero.action === 'attack') {
+          stats.attacks++;
+          addLog(`⚔️  Héroe ${hero.id + 1} ataca desde (${r},${c})`, 'attack');
+        }
+        if (hero.action === 'move' && (prev.row !== r || prev.col !== c)) {
+          stats.moves++;
+          addLog(`🚶 Héroe ${hero.id + 1} se movió a (${r},${c})`, 'move');
+        }
+        if (hero.action === 'potion') {
+          stats.potions++;
+          addLog(`🧪 Héroe ${hero.id + 1} usó poción (HP: ${hero.life}/${hero.max_life})`, 'potion');
+        }
+        if (hero.life < (prev.life || hero.life)) {
+          addLog(`💢 Héroe ${hero.id + 1} recibió daño (${prev.life || '?'}→${hero.life} HP)`, 'attack');
+        }
+      }
+
+      lastState[key] = { ...hero, row: r, col: c };
+    });
+  });
+
+  // Detectar muertes
+  Object.keys(lastState).forEach(id => {
+    const found = board.flat().find(h => h && h.id === Number(id));
+    if (!found && lastState[id]) {
+      stats.deaths++;
+      addLog(`💀 Héroe ${Number(id) + 1} ha caído en batalla`, 'death');
+      delete lastState[id];
+    }
+  });
+
+  document.getElementById('s-attacks').textContent = stats.attacks;
+  document.getElementById('s-potions').textContent = stats.potions;
+  document.getElementById('s-deaths').textContent  = stats.deaths;
+  document.getElementById('s-moves').textContent   = stats.moves;
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER COMPLETO
+// ══════════════════════════════════════════════════════════
+function render(state) {
+  detectEvents(state.board);
+  renderBoard(state.board);
+  renderHeroes(state.board);
+  document.getElementById('tick-counter').textContent = `TICK #${state.tick}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  WEBSOCKET → SERVIDOR RUST (WS BRIDGE)
+// ══════════════════════════════════════════════════════════
+const statusEl   = document.getElementById('status');
+const statusText = document.getElementById('status-text');
+let   ws, wsRetry = 2000;
+
+function setStatus(cls, txt) {
+  statusEl.className = cls;
+  statusText.textContent = txt;
+}
+
+function connectWS() {
+  setStatus('connecting', 'CONECTANDO AL SERVIDOR…');
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    setStatus('connected', 'SERVIDOR CONECTADO');
+    document.getElementById('demo-notice').style.display = 'none';
+    wsRetry = 2000;
+    addLog('🟢 Conexión establecida con el WS Bridge', 'move');
+  };
+
+  ws.onmessage = (evt) => {
+    try {
+      const state = JSON.parse(evt.data);
+      render(state);
+    } catch(e) { console.error('Parse error:', e); }
+  };
+
+  ws.onclose = () => {
+    setStatus('disconnected', 'SERVIDOR DESCONECTADO — REINTENTANDO…');
+    document.getElementById('demo-notice').style.display = 'block';
+    setTimeout(connectWS, wsRetry);
+    wsRetry = Math.min(wsRetry * 1.5, 15000);
+    addLog('🔴 Conexión perdida con el servidor', 'death');
+  };
+
+  ws.onerror = () => {
+    ws.close();
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+//  SIMULACIÓN LOCAL (cuando no hay servidor)
+// ══════════════════════════════════════════════════════════
+let simState = {
+  tick:   0,
+  board:  Array.from({ length: 3 }, () => Array(3).fill(null)),
+  heroes: [],
+};
+
+function mkHero(id) {
+  const maxLife = 100 + Math.floor(Math.random() * 101);
+  return { id, life: maxLife, max_life: maxLife, potions: 3, action: 'idle' };
+}
+
+function simPlace(hero) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const r = Math.floor(Math.random() * 3);
+    const c = Math.floor(Math.random() * 3);
+    if (!simState.board[r][c]) {
+      simState.board[r][c] = { ...hero, row: r, col: c };
+      return;
+    }
+  }
+}
+
+function simTick() {
+  // Spawn hasta 4 héroes al inicio
+  if (simState.heroes.length < 4 && simState.tick < 4) {
+    const hero = mkHero(simState.heroes.length);
+    simState.heroes.push(hero);
+    simPlace(hero);
+  }
+
+  simState.tick++;
+
+  // Cada héroe decide una acción
+  const occupied = [];
+  simState.board.forEach((row, r) => row.forEach((h, c) => { if (h) occupied.push({ h, r, c }); }));
+
+  occupied.forEach(({ h, r, c }) => {
+    const dirs = [[-1,0],[1,0],[0,1],[0,-1]];
+    const neighbors = dirs.map(([dr,dc]) => {
+      const nr = r+dr, nc = c+dc;
+      if (nr<0||nr>=3||nc<0||nc>=3) return { occupied:true, oob:true };
+      return { occupied: !!simState.board[nr][nc], nr, nc };
+    });
+    const occ  = neighbors.filter(n => n.occupied && !n.oob);
+    const free = neighbors.filter(n => !n.occupied && !n.oob);
+    const ratio = h.life / h.max_life;
+
+    if (ratio < 0.5 && h.potions > 0) {
+      h.potions--;
+      h.life = Math.min(h.life + 50, h.max_life);
+      h.action = 'potion';
+    } else if (ratio >= 0.5 && occ.length) {
+      // Ataque simulado
+      h.action = 'attack';
+      const target = occ[Math.floor(Math.random() * occ.length)];
+      if (!target.oob) {
+        const victim = simState.board[target.nr][target.nc];
+        if (victim) {
+          const dmg = Math.floor(Math.random() * 20) + 5;
+          victim.life -= dmg;
+          if (victim.life <= 0) {
+            // Eliminar víctima
+            simState.board[target.nr][target.nc] = null;
+            simState.heroes = simState.heroes.filter(x => x.id !== victim.id);
+          }
+        }
+      }
+    } else if (free.length) {
+      const chosen = free[Math.floor(Math.random() * free.length)];
+      simState.board[r][c] = null;
+      simState.board[chosen.nr][chosen.nc] = { ...h, row: chosen.nr, col: chosen.nc };
+      h.action = 'move';
+    } else {
+      h.action = 'idle';
+    }
+  });
+
+  render({ board: simState.board, tick: simState.tick, events: [] });
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+
+// Render inicial
+renderBoard(Array.from({length:3},()=>Array(3).fill(null)));
+
+// Intentar WS real
+connectWS();
+
+// Simulación local corre siempre (se pausa si WS está conectado)
+const simInterval = setInterval(() => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    simTick();
+  }
+}, 1200);
+</script>
+</body>
+</html>

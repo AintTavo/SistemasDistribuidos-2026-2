@@ -1,0 +1,1 @@
+C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica3-NClientes1Servidor\nclientes1servidor\target\debug\nclientes1servidor.exe: C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica3-NClientes1Servidor\nclientes1servidor\src\main.rs

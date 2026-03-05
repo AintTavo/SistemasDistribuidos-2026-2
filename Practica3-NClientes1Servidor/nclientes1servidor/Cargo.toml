@@ -1,0 +1,18 @@
+[package]
+name = "nclientes1servidor"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[dependencies]
+serde       = { version = "1",    features = ["derive"] }
+serde_json  = "1"
+rand        = "0.8"
+tungstenite = "0.21"
