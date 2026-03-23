@@ -1,0 +1,1 @@
+C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica4-NClientesMServidores\nclientesmservidores\target\debug\coordinator.exe: C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica4-NClientesMServidores\nclientesmservidores\src\coordinator.rs

@@ -1,0 +1,1 @@
+C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica4-NClientesMServidores\nclientesmservidores\target\release\client.exe: C:\Users\gusta\Documents\RepoDistribuidos\SistemasDistribuidos-2026-2\Practica4-NClientesMServidores\nclientesmservidores\src\client.rs
