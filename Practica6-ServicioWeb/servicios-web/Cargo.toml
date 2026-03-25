@@ -1,0 +1,23 @@
+[package]
+name = "servicios-web"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "server_coordinator"
+path = "src/server/server_coordinator.rs"
+
+[[bin]]
+name = "server_move"
+path = "src/server/server_move.rs"
+
+[[bin]]
+name = "server_attack"
+path = "src/server/server_attack.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[dependencies]
+rand = "0.10.0"
