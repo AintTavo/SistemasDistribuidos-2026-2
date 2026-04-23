@@ -2,8 +2,12 @@
     "name" : "PWA Practica 7 : Dungeon crawler",
     "short_name" : "PWA: Dungeon crawler",
     "description" : "A progresive web app made for the 7th practice of the dristributed systems, the focus is to make a dungeon crawler in a PWA",
+
+    "scope" : "./",
     "start_url" : "./index.html",
     "display" : "standalone",
+    "orientation" : "portrait",
+
     "background_color" : "#000000",
     "theme_color" : "#000000",
     "lang" : "en",
