@@ -1,27 +1,294 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <!--Meta data-->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Practica 7: PWA">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <!--Links-->
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./docs/png/logo/logo_180x180.png">
-    <link rel="icon" href="./docs/png/logo.png" type="image/png">
-
-    <!--Script-->
-    <script src="./sw.js"></script>
-
-    <!--Title-->
-    <title>Practica 7: PWA</title>
-
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Dungeon Crawler">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#08080a">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="icon" href="./icons/icon-32.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap">
+  <link rel="stylesheet" href="./css/index.css">
+  <title>Dungeon Crawler</title>
 </head>
 <body>
-    
+
+<!-- ══════════════════════════ HEADER ══════════════════════════ -->
+<header id="main-header">
+  <a class="logo" href="#">DC<span class="logo-lvl" id="header-level">LVL·1</span></a>
+  <nav class="nav-links">
+    <a class="nav-link active" href="#" id="nav-game">MAZMORRA</a>
+    <a class="nav-link" href="#" id="nav-inv">INVENTARIO</a>
+    <a class="nav-link" href="#" id="nav-api">CONEXIÓN</a>
+  </nav>
+  <div class="nav-right">
+    <span id="conn-badge" class="conn-badge offline">● SIN CONEXIÓN</span>
+  </div>
+  <button class="burger-btn" id="burger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="mobile-menu" id="mobile-menu">
+  <a class="mobile-menu-link active" href="#" data-page="game">MAZMORRA</a>
+  <a class="mobile-menu-link" href="#" data-page="inv">INVENTARIO</a>
+  <a class="mobile-menu-link" href="#" data-page="api">CONEXIÓN API</a>
+</div>
+
+<!-- ══════════════════════════ PAGES ══════════════════════════ -->
+<main>
+
+<!-- ▸ PAGE: JUEGO -->
+<div class="page active" id="page-game">
+  <div class="game-wrap">
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-block">
+        <div class="hud-label">NIVEL MAZMORRA</div>
+        <div class="hud-val accent" id="hud-level">1</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">GRUPOS ELIMINADOS</div>
+        <div class="hud-val" id="hud-kills">0</div>
+      </div>
+      <div class="hud-block hud-hp">
+        <div class="hud-label">VIDA</div>
+        <div class="hud-val" id="hud-hp">100 / 100</div>
+        <div class="hp-bar-wrap"><div class="hp-bar" id="hp-bar"></div></div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">ARMA</div>
+        <div class="hud-val" id="hud-weapon">⚔️ Espada Oxidada</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">MAGIAS</div>
+        <div class="hud-val" id="hud-magics">—</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">POCIONES</div>
+        <div class="hud-val" id="hud-potions">0/3</div>
+      </div>
+    </div>
+
+    <!-- PASILLO / ARENA -->
+    <div class="corridor" id="corridor">
+      <div class="corridor-bg"></div>
+      <div class="corridor-fog"></div>
+      
+      <!-- Zona de enemigos -->
+      <div class="enemy-zone" id="enemy-zone">
+        <!-- Generado dinámicamente -->
+      </div>
+
+      <!-- Zona del jugador -->
+      <div class="player-zone">
+        <div class="player-sprite" id="player-sprite">⚔️</div>
+        <div class="player-label">TÚ</div>
+      </div>
+
+      <!-- Log de batalla -->
+      <div class="battle-log" id="battle-log">
+        <div class="log-entry accent">[ BIENVENIDO A LA MAZMORRA ]</div>
+        <div class="log-entry">Avanza con valentía...</div>
+      </div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="controls">
+      <button class="btn-primary" id="btn-attack">⚔️ ATACAR</button>
+      <button class="btn-secondary" id="btn-magic" disabled>✨ MAGIA</button>
+      <button class="btn-potion" id="btn-potion" disabled>🧪 USAR POCIÓN</button>
+      <button class="btn-danger" id="btn-flee">🏃 ABANDONAR</button>
+    </div>
+
+    <!-- SELECTOR DE MAGIA -->
+    <div class="magic-selector hidden" id="magic-selector">
+      <div class="ms-title">SELECCIONA MAGIA</div>
+      <div class="ms-list" id="ms-list"></div>
+      <button class="btn-secondary" id="ms-cancel">CANCELAR</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ▸ PAGE: INVENTARIO -->
+<div class="page" id="page-inv">
+  <div class="inv-wrap">
+    <div class="inv-header">
+      <div class="inv-header-tag">— INVENTARIO —</div>
+      <h1>Tu equipamiento</h1>
+      <p>Items guardados en tu sesión actual</p>
+    </div>
+
+    <div class="inv-grid">
+      <!-- ARMA ACTUAL -->
+      <div class="inv-section">
+        <div class="sec-header">
+          <span class="sec-num">01</span>
+          <span class="sec-title">ARMA EQUIPADA</span>
+          <span class="sec-line"></span>
+        </div>
+        <div class="inv-item-card" id="inv-weapon-card">
+          <div class="inv-item-icon">⚔️</div>
+          <div class="inv-item-info">
+            <div class="inv-item-name" id="inv-weapon-name">Espada Oxidada</div>
+            <div class="inv-item-stat" id="inv-weapon-stat">DMG: 3–8</div>
+            <span class="cert-tag hi">EQUIPADA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAGIAS -->
+      <div class="inv-section">
+        <div class="sec-header">
+          <span class="sec-num">02</span>
+          <span class="sec-title">MAGIAS APRENDIDAS (0/3)</span>
+          <span class="sec-line"></span>
+        </div>
+        <div id="inv-magics-list" class="inv-list">
+          <div class="inv-empty">Ninguna magia aprendida aún</div>
+        </div>
+      </div>
+
+      <!-- POCIONES -->
+      <div class="inv-section">
+        <div class="sec-header">
+          <span class="sec-num">03</span>
+          <span class="sec-title">POCIONES (0/3)</span>
+          <span class="sec-line"></span>
+        </div>
+        <div id="inv-potions-list" class="inv-list">
+          <div class="inv-empty">Sin pociones guardadas</div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="inv-section">
+        <div class="sec-header">
+          <span class="sec-num">04</span>
+          <span class="sec-title">ESTADÍSTICAS</span>
+          <span class="sec-line"></span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-block"><div class="stat-label">GRUPOS VENCIDOS</div><div class="stat-val accent" id="stat-kills">0</div></div>
+          <div class="stat-block"><div class="stat-label">NIVEL ACTUAL</div><div class="stat-val accent" id="stat-level">1</div></div>
+          <div class="stat-block"><div class="stat-label">DAÑO TOTAL</div><div class="stat-val" id="stat-dmg">0</div></div>
+          <div class="stat-block"><div class="stat-label">CURACIÓN TOTAL</div><div class="stat-val" id="stat-heal">0</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ▸ PAGE: CONEXIÓN API -->
+<div class="page" id="page-api">
+  <div class="api-wrap">
+    <div class="api-header">
+      <div class="api-header-tag">— CONEXIÓN —</div>
+      <h1>Servidor de Recompensas</h1>
+      <p>Conéctate para obtener items al vencer enemigos</p>
+    </div>
+
+    <div class="api-form-card">
+      <div class="api-status-bar" id="api-status-bar">
+        <span id="api-status-icon">●</span>
+        <span id="api-status-text">DESCONECTADO</span>
+      </div>
+
+      <div class="api-field">
+        <label class="api-label">URL DEL SERVIDOR</label>
+        <input class="api-input" id="api-url" type="text" value="http://localhost:3000" placeholder="http://localhost:3000">
+      </div>
+      <div class="api-field">
+        <label class="api-label">USUARIO</label>
+        <input class="api-input" id="api-user" type="text" placeholder="admin">
+      </div>
+      <div class="api-field">
+        <label class="api-label">CONTRASEÑA</label>
+        <input class="api-input" id="api-pass" type="password" placeholder="••••••••">
+      </div>
+
+      <div class="api-actions">
+        <button class="btn-primary" id="btn-connect">CONECTAR</button>
+        <button class="btn-secondary" id="btn-disconnect">DESCONECTAR</button>
+      </div>
+
+      <div class="api-note">
+        <span class="cert-tag hi">INFO</span>
+        <span>Al conectarte recibirás recompensas al vencer grupos de enemigos. Las magias se conservan incluso si mueres.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══════════════════════════ MODALS ══════════════════════════ -->
+
+<!-- Modal de recompensa -->
+<div class="modal-overlay hidden" id="reward-modal">
+  <div class="modal-box">
+    <div class="modal-tag">— RECOMPENSA —</div>
+    <div class="modal-icon" id="rw-icon">⚔️</div>
+    <div class="modal-title" id="rw-title">Espada Corta</div>
+    <div class="modal-rarity" id="rw-rarity">RARO</div>
+    <div class="modal-stat" id="rw-stat">DMG: 6–14</div>
+    <div class="modal-desc" id="rw-desc"></div>
+    <div class="modal-actions" id="rw-actions">
+      <!-- Dinámico según tipo -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal de nivel up -->
+<div class="modal-overlay hidden" id="levelup-modal">
+  <div class="modal-box levelup">
+    <div class="modal-tag">— NIVEL SUPERADO —</div>
+    <div class="modal-icon" id="lu-icon">⬆️</div>
+    <div class="modal-title" id="lu-title">NIVEL 2</div>
+    <div class="modal-desc">Los enemigos serán más fuertes, pero las recompensas también.</div>
+    <button class="btn-primary" id="lu-ok">CONTINUAR</button>
+  </div>
+</div>
+
+<!-- Modal de muerte -->
+<div class="modal-overlay hidden" id="death-modal">
+  <div class="modal-box death">
+    <div class="modal-tag">— HAS CAÍDO —</div>
+    <div class="modal-icon">💀</div>
+    <div class="modal-title">DERROTA</div>
+    <div class="modal-desc">Has perdido tu arma y pociones. Las magias aprendidas permanecen.</div>
+    <button class="btn-primary" id="death-restart">REINTENTAR</button>
+  </div>
+</div>
+
+<!-- Modal de huida -->
+<div class="modal-overlay hidden" id="flee-modal">
+  <div class="modal-box">
+    <div class="modal-tag">— ESCAPASTE —</div>
+    <div class="modal-icon">🏃</div>
+    <div class="modal-title">MAZMORRA ABANDONADA</div>
+    <div class="modal-desc">Tu progreso ha sido guardado. Las magias, pociones y arma actual se conservan.</div>
+    <button class="btn-primary" id="flee-ok">MENÚ PRINCIPAL</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ SCRIPTS ══════════════════════════ -->
+<script src="./js/game.js"></script>
+<script>
+  // Registro del Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registrado:', reg.scope))
+        .catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
 </body>
 </html>

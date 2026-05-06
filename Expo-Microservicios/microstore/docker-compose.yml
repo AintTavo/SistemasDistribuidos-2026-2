@@ -1,0 +1,102 @@
+version: "3.9"
+
+networks:
+  microstore-net:
+    driver: bridge
+
+services:
+  # ── Microservicio de Usuarios (Rust / puerto 8001) ──────────────────────────
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: ms-users
+    ports:
+      - "8001:8001"
+    networks:
+      - microstore-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/users/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Microservicio de Items (Rust / puerto 8002) ─────────────────────────────
+  items-service:
+    build:
+      context: ./items-service
+      dockerfile: Dockerfile
+    container_name: ms-items
+    ports:
+      - "8002:8002"
+    networks:
+      - microstore-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/items/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Microservicio de Compras (Rust / puerto 8003) ───────────────────────────
+  purchases-service:
+    build:
+      context: ./purchases-service
+      dockerfile: Dockerfile
+    container_name: ms-purchases
+    ports:
+      - "8003:8003"
+    environment:
+      - USERS_SERVICE_URL=http://users-service:8001
+      - ITEMS_SERVICE_URL=http://items-service:8002
+    networks:
+      - microstore-net
+    depends_on:
+      users-service:
+        condition: service_healthy
+      items-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8003/purchases/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── API Gateway (Node.js / puerto 3000) ─────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: ms-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - USERS_SERVICE_URL=http://users-service:8001
+      - ITEMS_SERVICE_URL=http://items-service:8002
+      - PURCHASES_SERVICE_URL=http://purchases-service:8003
+    networks:
+      - microstore-net
+    depends_on:
+      users-service:
+        condition: service_healthy
+      items-service:
+        condition: service_healthy
+      purchases-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Frontend (Nginx sirviendo HTML estático / puerto 80) ────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ms-frontend
+    ports:
+      - "80:80"
+    networks:
+      - microstore-net
+    depends_on:
+      - api-gateway
+    restart: unless-stopped

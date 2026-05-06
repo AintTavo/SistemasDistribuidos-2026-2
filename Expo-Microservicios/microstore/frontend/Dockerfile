@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+COPY index.html /usr/share/nginx/html/index.html
+
+# Configuración nginx para SPA y proxy al API Gateway
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

@@ -6,11 +6,16 @@
     "scope" : "./",
     "start_url" : "./index.html",
     "display" : "standalone",
-    "orientation" : "portrait",
+    "orientation" : "portrait-primary",
 
-    "background_color" : "#000000",
-    "theme_color" : "#000000",
-    "lang" : "en",
+    "background_color" : "#08080a",
+    "theme_color" : "#08080a",
+    "lang" : "es",
+
+    "categories": [
+        "games",
+        "entertainment"
+    ],
 
     "icons" : [
         {
@@ -24,6 +29,14 @@
             "type" : "image/png",
             "sizes" : "512x512",
             "purpose" : "maskable"
+        }
+    ],
+
+    "shortcuts" : [
+        {
+            "name": "Iniciar Mazmorra",
+            "url": "./index.html#game",
+            "description": "Ir directamente al juego"
         }
     ]
 }
