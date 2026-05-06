@@ -1,8 +1,10 @@
 FROM nginx:alpine
 
-COPY index.html /usr/share/nginx/html/index.html
+RUN rm -rf /usr/share/nginx/html/*
 
-# Configuración nginx para SPA y proxy al API Gateway
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY index.html /usr/share/nginx/html/
 
 EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

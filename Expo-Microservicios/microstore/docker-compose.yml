@@ -1,102 +1,83 @@
-version: "3.9"
-
-networks:
-  microstore-net:
-    driver: bridge
+version: '3.8'
 
 services:
-  # ── Microservicio de Usuarios (Rust / puerto 8001) ──────────────────────────
-  users-service:
+  products:
     build:
-      context: ./users-service
+      context: ./products-service
       dockerfile: Dockerfile
-    container_name: ms-users
+    container_name: microstore-products
     ports:
-      - "8001:8001"
+      - "3001:3001"
+    volumes:
+      - products_data:/app/data
     networks:
-      - microstore-net
-    restart: unless-stopped
+      - microstore-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8001/users/health || exit 1"]
-      interval: 15s
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 10s
 
-  # ── Microservicio de Items (Rust / puerto 8002) ─────────────────────────────
-  items-service:
+  orders:
     build:
-      context: ./items-service
+      context: ./orders-service
       dockerfile: Dockerfile
-    container_name: ms-items
+    container_name: microstore-orders
     ports:
-      - "8002:8002"
+      - "3002:3002"
+    volumes:
+      - orders_data:/app/data
     networks:
-      - microstore-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8002/items/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-
-  # ── Microservicio de Compras (Rust / puerto 8003) ───────────────────────────
-  purchases-service:
-    build:
-      context: ./purchases-service
-      dockerfile: Dockerfile
-    container_name: ms-purchases
-    ports:
-      - "8003:8003"
-    environment:
-      - USERS_SERVICE_URL=http://users-service:8001
-      - ITEMS_SERVICE_URL=http://items-service:8002
-    networks:
-      - microstore-net
+      - microstore-network
     depends_on:
-      users-service:
+      products:
         condition: service_healthy
-      items-service:
-        condition: service_healthy
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8003/purchases/health || exit 1"]
-      interval: 15s
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/health"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 15s
 
-  # ── API Gateway (Node.js / puerto 3000) ─────────────────────────────────────
-  api-gateway:
+  gateway:
     build:
-      context: ./api-gateway
+      context: ./gateway
       dockerfile: Dockerfile
-    container_name: ms-gateway
+    container_name: microstore-gateway
     ports:
-      - "3000:3000"
-    environment:
-      - USERS_SERVICE_URL=http://users-service:8001
-      - ITEMS_SERVICE_URL=http://items-service:8002
-      - PURCHASES_SERVICE_URL=http://purchases-service:8003
+      - "3003:3003"
     networks:
-      - microstore-net
+      - microstore-network
     depends_on:
-      users-service:
+      products:
         condition: service_healthy
-      items-service:
+      orders:
         condition: service_healthy
-      purchases-service:
-        condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # ── Frontend (Nginx sirviendo HTML estático / puerto 80) ────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ms-frontend
+    container_name: microstore-frontend
     ports:
-      - "80:80"
+      - "8080:80"
     networks:
-      - microstore-net
+      - microstore-network
     depends_on:
-      - api-gateway
-    restart: unless-stopped
+      gateway:
+        condition: service_started
+
+volumes:
+  products_data:
+  orders_data:
+
+networks:
+  microstore-network:
+    driver: bridge
