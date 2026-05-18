@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -10,6 +10,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Mantenemos estas líneas para que el Gateway pueda leer el body y hacer el console.log
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,6 +27,7 @@ app.use('/api/products', createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: (path) => path.replace('/api/products', '/products'),
   onProxyReq: (proxyReq, req, res) => {
+    fixRequestBody(proxyReq, req);
     console.log(`[GATEWAY -> PRODUCTS] ${req.method} /products`);
   },
   onError: (err, req, res) => {
@@ -33,11 +36,13 @@ app.use('/api/products', createProxyMiddleware({
   }
 }));
 
+
 app.use('/api/orders', createProxyMiddleware({
   target: 'http://orders:3002',
   changeOrigin: true,
   pathRewrite: (path) => path.replace('/api/orders', '/orders'),
   onProxyReq: (proxyReq, req, res) => {
+    fixRequestBody(proxyReq, req); 
     console.log(`[GATEWAY -> ORDERS] ${req.method} /orders`);
   },
   onError: (err, req, res) => {
